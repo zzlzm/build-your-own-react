@@ -1,0 +1,19 @@
+{
+    "name": "build-your-own-react",
+    "version": "1.0.0",
+    "description": "",
+    "main": "server.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start": "node server.js",
+        "watch": "babel src -d lib -w"
+    },
+    "devDependencies": {
+        "@babel/cli": "7.17.10",
+        "@babel/core": "7.17.10",
+        "@babel/preset-env": "7.17.10",
+        "@babel/preset-react": "7.16.7"
+    },
+    "author": "",
+    "license": "ISC"
+}
