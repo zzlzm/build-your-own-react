@@ -403,6 +403,8 @@ function useState(initialValue) {
     actions.forEach((action) => {
         hook.state = action(hook.state);
     });
+    wipFiber.hooks.push(hook);
+    hookIndex++;
     const setState = (action) => {
         hook.queue.push(action);
         wipRoot = {
@@ -413,8 +415,6 @@ function useState(initialValue) {
         nextUnitOfWork = wipRoot;
         deletions = [];
     };
-    wipFiber.hooks.push(hook);
-    hookIndex++;
     return [hook.state, setState];
 }
 
