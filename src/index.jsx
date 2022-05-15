@@ -20,6 +20,7 @@
  * @property {object} dom
  * @property {object} props
  * @property {Array} hooks
+ * @property {Array} effects
  */
 
 /**
@@ -51,6 +52,7 @@ const Didact = {
     createElement,
     render,
     useState,
+    useEffect,
 };
 
 /**
@@ -213,6 +215,7 @@ function commitRoot() {
     // TODO add nodes to dom
     deletions.forEach(commitWork);
     commitWork(wipRoot.child);
+    commitEffects();
     currentRoot = wipRoot;
     wipRoot = null;
 }
@@ -238,9 +241,39 @@ function commitWork(fiber) {
     } else if (fiber.effectTag === "UPDATE") {
         updateDom(fiber.dom, fiber.alternate.props, fiber.props);
     }
+    flushEffects(fiber);
     commitWork(fiber.sibling);
     commitWork(fiber.child);
 }
+/**
+ *
+ * @param {Fiber} fiber
+ */
+function flushEffects(fiber) {
+    if (fiber.effects) {
+        const oldFiber = fiber.alternate;
+        for (let i = 0; i < fiber.effects.length; i++) {
+            if (
+                !fiber.alternate ||
+                !isArrEleSame(
+                    fiber.effects[i].dependiencies,
+                    oldFiber.effects[i].dependiencies
+                )
+            ) {
+                effects.push(fiber.effects[i]);
+            }
+        }
+    }
+}
+const isArrEleSame = (a, b) => {
+    let res = true;
+    for (let i = 0; i < a.length; i++) {
+        if (a[i] !== b[i]) {
+            res = false;
+        }
+    }
+    return res;
+};
 function commitDeletion(fiber, domParent) {
     if (fiber.dom) {
         domParent.removeChild(fiber.dom);
@@ -386,6 +419,25 @@ function useState(initialValue) {
 }
 
 /**
+ * Step IX useEffect
+ */
+let effects = [];
+
+function useEffect(action, dependiencies) {
+    if (!wipFiber.effects) {
+        wipFiber.effects = [];
+    }
+    wipFiber.effects.push({ action, dependiencies });
+}
+
+function commitEffects() {
+    effects.forEach((effect) => {
+        effect.action();
+    });
+    effects = [];
+}
+
+/**
  * entry point
  */
 requestIdleCallback(workLoop);
@@ -436,7 +488,21 @@ requestIdleCallback(workLoop);
  */
 function Counter() {
     const [state, setState] = Didact.useState(1);
-    return <h1 onClick={() => setState((c) => c + 1)}>Count: {state}</h1>;
+    const [counter, setCounter] = Didact.useState(1);
+    Didact.useEffect(() => {
+        console.log("state", state);
+    }, [state]);
+    Didact.useEffect(() => {
+        console.log("counter", counter);
+    }, [counter, state]);
+    return (
+        <div>
+            <h1 onClick={() => setState((c) => c + 1)}>
+                Count: state {state}, counter {counter}
+            </h1>
+            <h1 onClick={() => setCounter((c) => c + 1)}>Counter Listener</h1>
+        </div>
+    );
 }
 const element = <Counter />;
 const container = document.getElementById("root");
